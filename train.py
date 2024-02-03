@@ -100,7 +100,7 @@ def train(model, optimizer, scheduler, train_data, dev_data, batch_size, fp16, c
 def parse_args():
     ap = argparse.ArgumentParser("arguments for bert-nli training")
     ap.add_argument('-b','--batch_size',type=int,default=32,help='batch size')
-    ap.add_argument('-ep','--epoch_num',type=int,default=5,help='epoch num')
+    ap.add_argument('-ep','--epoch_num',type=int,default=1,help='epoch num')
     ap.add_argument('--fp16',type=int,default=0,help='use apex mixed precision training (1) or not (0); do not use this together with checkpoint')
     ap.add_argument('--check_point','-cp',type=int,default=0,help='use checkpoint (1) or not (0); this is required for training bert-large or larger models; do not use this together with apex fp16')
     ap.add_argument('--gpu',type=int,default=1,help='use gpu (1) or not (0)')
@@ -169,7 +169,6 @@ if __name__ == '__main__':
         nli_reader = NLIDataReader('datasets/AllNLI')
         msnli_data = nli_reader.get_examples('train.gz') #,max_examples=5000)
         all_data = msnli_data + hans_data
-
     elif mqnli:
         nli_reader = NLIDataReader('./datasets/MQNLI')
         all_data = nli_reader.get_mqnli_examples('0-75gendata-train.json')
@@ -219,10 +218,15 @@ if __name__ == '__main__':
     else:
         hans_test_data = []
 
-    nli_reader = NLIDataReader('datasets/AllNLI')
-    msnli_test_data = nli_reader.get_examples('dev.gz') #,max_examples=50)
 
-    test_data = msnli_test_data + hans_test_data
+    if mqnli:
+        nli_reader = NLIDataReader('./datasets/MQNLI')
+        test_data = nli_reader.get_mqnli_examples('0-75gendata-val.json')
+    else:
+        nli_reader = NLIDataReader('datasets/AllNLI')
+        msnli_test_data = nli_reader.get_examples('dev.gz') #,max_examples=50)
+
+        test_data = msnli_test_data + hans_test_data
 
     logging.info('test data size: {}'.format(len(test_data)))
     test_acc = evaluate(model,test_data,batch_size)

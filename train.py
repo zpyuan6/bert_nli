@@ -99,8 +99,8 @@ def train(model, optimizer, scheduler, train_data, dev_data, batch_size, fp16, c
 
 def parse_args():
     ap = argparse.ArgumentParser("arguments for bert-nli training")
-    ap.add_argument('-b','--batch_size',type=int,default=8,help='batch size')
-    ap.add_argument('-ep','--epoch_num',type=int,default=1,help='epoch num')
+    ap.add_argument('-b','--batch_size',type=int,default=32,help='batch size')
+    ap.add_argument('-ep','--epoch_num',type=int,default=5,help='epoch num')
     ap.add_argument('--fp16',type=int,default=0,help='use apex mixed precision training (1) or not (0); do not use this together with checkpoint')
     ap.add_argument('--check_point','-cp',type=int,default=0,help='use checkpoint (1) or not (0); this is required for training bert-large or larger models; do not use this together with apex fp16')
     ap.add_argument('--gpu',type=int,default=1,help='use gpu (1) or not (0)')
@@ -110,19 +110,21 @@ def parse_args():
     ap.add_argument('-wp','--warmup_percent',type=float,default=0.2,help='how many percentage of steps are used for warmup')
     ap.add_argument('-bt','--bert_type',type=str,default='bert-base',help='transformer (bert) pre-trained model you want to use', choices=['bert-base','bert-large','albert-base-v2','albert-large-v2'])
     ap.add_argument('--hans',type=int,default=0,help='use hans data (1) or not (0)')
+    ap.add_argument('--mqnli',type=int,default=1,help='use hans dataset (1) or not (0)')
     ap.add_argument('-rl','--reinit_layers',type=int,default=0,help='reinitialise the last N layers')
     ap.add_argument('-fl','--freeze_layers',type=int,default=0,help='whether to freeze all but the lasat few layers (1) or not (0)')
 
     args = ap.parse_args()
-    return args.batch_size, args.epoch_num, args.fp16, args.check_point, args.gpu,  args.scheduler_setting, args.max_grad_norm, args.warmup_percent, args.bert_type, args.trained_model, args.hans, args.reinit_layers, args.freeze_layers
+    return args.batch_size, args.epoch_num, args.fp16, args.check_point, args.gpu,  args.scheduler_setting, args.max_grad_norm, args.warmup_percent, args.bert_type, args.trained_model, args.hans, args.mqnli, args.reinit_layers, args.freeze_layers
 
 
 if __name__ == '__main__':
 
-    batch_size, epoch_num, fp16, checkpoint, gpu, scheduler_setting, max_grad_norm, warmup_percent, bert_type, trained_model, hans, reinit_layers, freeze_layers = parse_args()
+    batch_size, epoch_num, fp16, checkpoint, gpu, scheduler_setting, max_grad_norm, warmup_percent, bert_type, trained_model, hans, mqnli, reinit_layers, freeze_layers = parse_args()
     fp16 = bool(fp16)
     gpu = bool(gpu)
     hans = bool(hans)
+    mqnli = bool(mqnli)
     checkpoint = bool(checkpoint)
     if trained_model=='None': trained_model=None
 
@@ -138,11 +140,14 @@ if __name__ == '__main__':
     print('max grad norm:\t{}'.format(max_grad_norm))
     print('warmup percent:\t{}'.format(warmup_percent))
     print('using hans:\t{}'.format(hans))
+    print('using mqnli:\t{}'.format(mqnli))
     print('=====Arguments=====')
 
     label_num = 3
     if hans:
         model_save_path = 'output/nli_hans_{}-{}'.format(bert_type,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    elif mqnli:
+        model_save_path = 'output/mqnli_{}-{}'.format(bert_type,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     else:
         model_save_path = 'output/nli_{}-{}'.format(bert_type,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
@@ -156,17 +161,24 @@ if __name__ == '__main__':
     #### /print debug information to stdout
 
     # Read the dataset
+
+
     if hans:
         nli_reader = NLIDataReader('datasets/Hans')
         hans_data = nli_reader.get_hans_examples('heuristics_train_set.txt')
+        nli_reader = NLIDataReader('datasets/AllNLI')
+        msnli_data = nli_reader.get_examples('train.gz') #,max_examples=5000)
+        all_data = msnli_data + hans_data
+
+    elif mqnli:
+        nli_reader = NLIDataReader('./datasets/MQNLI')
+        all_data = nli_reader.get_mqnli_examples('0-75gendata-train.json')
     else:
-        hans_data = []
+        nli_reader = NLIDataReader('datasets/AllNLI')
+        msnli_data = nli_reader.get_examples('train.gz') #,max_examples=5000)
+        all_data = msnli_data 
 
-    nli_reader = NLIDataReader('datasets/AllNLI')
     train_num_labels = nli_reader.get_num_labels()
-    msnli_data = nli_reader.get_examples('train.gz') #,max_examples=5000)
-
-    all_data = msnli_data + hans_data
     random.shuffle(all_data)
     train_num = int(len(all_data)*0.95)
     train_data = all_data[:train_num]

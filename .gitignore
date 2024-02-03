@@ -1,3 +1,5 @@
 apex/
 venv_nli/
 *.pyc
+datasets/MQNLI/*
+*.state_dict

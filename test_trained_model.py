@@ -41,12 +41,13 @@ def parse_args():
     ap.add_argument('-tm','--trained_model',type=str,default='default',help='path to the trained model you want to test; if set as "default", it will find in output xx.state_dict, where xx is the bert-type you specified')
     ap.add_argument('-bt','--bert_type',type=str,default='bert-large',help='model you want to test; make sure this is consistent with your trained model')
     ap.add_argument('--hans',type=int,default=0,help='use hans dataset (1) or not (0)')
+    ap.add_argument('--mqnli',type=int,default=1,help='use hans dataset (1) or not (0)')
 
     args = ap.parse_args()
-    return args.batch_size, args.gpu, args.trained_model, args.checkpoint, args.bert_type, args.hans
+    return args.batch_size, args.gpu, args.trained_model, args.checkpoint, args.bert_type, args.hans, args.mqnli
 
 if __name__ == '__main__':
-    batch_size, gpu, mpath, checkpoint, bert_type, hans = parse_args()
+    batch_size, gpu, mpath, checkpoint, bert_type, hans, mqnli = parse_args()
 
     if mpath == 'default': mpath = 'output/{}.state_dict'.format(bert_type)
     gpu = bool(gpu)
@@ -62,13 +63,18 @@ if __name__ == '__main__':
     print('hans data:\t{}'.format(hans))
 
     # Read the dataset
-    nli_reader = NLIDataReader('./datasets/AllNLI')
-    test_data = nli_reader.get_examples('dev.gz') #,max_examples=50)
-
     if hans:
         nli_reader = NLIDataReader('./datasets/Hans')
-        test_data += nli_reader.get_hans_examples('heuristics_evaluation_set.txt')
+        test_data = nli_reader.get_hans_examples('heuristics_evaluation_set.txt')
+    elif mqnli:
+        nli_reader = NLIDataReader('./datasets/MQNLI')
+        test_data = nli_reader.get_mqnli_examples('0-5gendata-test.json')
+    else:
+        nli_reader = NLIDataReader('./datasets/AllNLI')
+        test_data = nli_reader.get_examples('dev.gz') #,max_examples=50)
+    
 
+    
     model = BertNLIModel(model_path=mpath,batch_size=batch_size,bert_type=bert_type)
     print('test data size: {}'.format(len(test_data)))
     evaluate(model,test_data,checkpoint,test_bs=batch_size)

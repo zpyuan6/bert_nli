@@ -3,6 +3,7 @@ import pandas as pd
 import csv
 import gzip
 import os
+import json
 
 
 class NLIDataReader(object):
@@ -49,6 +50,21 @@ class NLIDataReader(object):
                 break
 
         return examples
+
+    def get_mqnli_examples(self, filename, max_examples=0):
+        dataset_json = json.load(open(os.path.join(self.dataset_folder,filename),'r'))
+
+        examples = []
+
+        for idx, entry in enumerate(dataset_json):
+            guid = "%s-%d" % (filename, idx)
+            examples.append( InputExample(guid=guid, texts=entry['input'], label=self.map_label(entry['gold_label'])) )
+
+            if 0 < max_examples <= len(examples):
+                break
+
+        return examples
+        
 
     @staticmethod
     def get_labels():

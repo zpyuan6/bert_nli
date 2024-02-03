@@ -100,23 +100,23 @@ class BertNLIModel(nn.Module):
         all_hidden_states = ()
         all_attentions = ()
         for i, layer_module in enumerate(module.layer):
-            if module.output_hidden_states:
+            if module.config.output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
 
             layer_outputs = checkpoint.checkpoint(layer_module, hidden_states, attention_mask, head_mask[i])
             hidden_states = layer_outputs[0]
 
-            if module.output_attentions:
+            if module.config.output_attentions:
                 all_attentions = all_attentions + (layer_outputs[1],)
 
         # Add last layer
-        if module.output_hidden_states:
+        if module.config.output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
 
         outputs = (hidden_states,)
-        if module.output_hidden_states:
+        if module.config.output_hidden_states:
             outputs = outputs + (all_hidden_states,)
-        if module.output_attentions:
+        if module.config.output_attentions:
             outputs = outputs + (all_attentions,)
         return outputs  # last-layer hidden state, (all hidden states), (all attentions)
 

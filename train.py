@@ -229,7 +229,7 @@ if __name__ == '__main__':
         test_data = msnli_test_data + hans_test_data
 
     logging.info('test data size: {}'.format(len(test_data)))
-    test_acc = evaluate(model,test_data,batch_size)
+    test_acc = evaluate(model,test_data,checkpoint)
     logging.info('accuracy on test set: {}'.format(test_acc))
 
     if model_save_path is not None:

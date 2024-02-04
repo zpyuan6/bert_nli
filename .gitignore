@@ -2,4 +2,5 @@ apex/
 venv_nli/
 *.pyc
 datasets/MQNLI/*
+datasets/mqnli_causal/*
 *.state_dict

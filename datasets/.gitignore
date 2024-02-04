@@ -1,1 +1,4 @@
 AllNLI/
+MQNLI/
+mqnli_causal/
+mqnli_*

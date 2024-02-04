@@ -17,15 +17,16 @@ class BertNLIModel(nn.Module):
         super(BertNLIModel, self).__init__()
         self.bert_type = bert_type
 
-        if 'bert-base' in bert_type:
+        if 'bert-base' == bert_type:
             self.bert = BertModel.from_pretrained('bert-base-uncased')
             self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        elif 'bert-large' in bert_type:
+        elif 'bert-large' == bert_type:
             self.bert = BertModel.from_pretrained('bert-large-uncased')
             self.tokenizer = BertTokenizer.from_pretrained('bert-large-uncased')
         elif 'albert' in bert_type:
             self.bert = AlbertModel.from_pretrained(bert_type)
             self.tokenizer = AlbertTokenizer.from_pretrained(bert_type)
+            print(f"Load Albert Model")
         else:
             print('illegal bert type {}!'.format(bert_type))
 
@@ -71,7 +72,7 @@ class BertNLIModel(nn.Module):
         else:
             self.load_state_dict(sdict)
 
-    def forward(self, sent_pair_list, checkpoint=True, bs=None):
+    def forward(self, sent_pair_list, checkpoint=False, bs=None):
         all_probs = None
         if bs is None: 
             bs = self.batch_size

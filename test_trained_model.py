@@ -68,7 +68,7 @@ if __name__ == '__main__':
         test_data = nli_reader.get_hans_examples('heuristics_evaluation_set.txt')
     elif mqnli:
         nli_reader = NLIDataReader('./datasets/MQNLI')
-        test_data = nli_reader.get_mqnli_examples('0-5gendata-test.json')
+        test_data = nli_reader.get_mqnli_examples('0-75gendata-test.json')
     else:
         nli_reader = NLIDataReader('./datasets/AllNLI')
         test_data = nli_reader.get_examples('dev.gz') #,max_examples=50)
